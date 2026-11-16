@@ -33,11 +33,11 @@ local ALTITUDE_HUD = get_param_handle("ALTITUDE_HUD")
 local headingMode = get_param_handle("headingMode")
 
 
-local velVecHUDY  = get_param_handle("velVecHUDY")
-local velVecHUDX  = get_param_handle("velVecHUDX")
+local FPVHUDY  = get_param_handle("FPVHUDY")
+local FPVHUDX  = get_param_handle("FPVHUDX")
 
-local VV_LimitedLower = get_param_handle("VV_LimitedLower")
-local VV_LimitedUpper = get_param_handle("VV_LimitedUpper")
+local FPVLowLim = get_param_handle("FPVLowLim")
+local FPVUpLim = get_param_handle("FPVUpLim")
 
 
 
@@ -113,19 +113,19 @@ function update()
  local VelVec_x = math.rad(sensor_data.getAngleOfSlide())
  local VelVec_y = -sensor_data.getAngleOfAttack() 
 
-        velVecHUDY:set(VelVec_y * (1.08))
+        FPVHUDY:set(VelVec_y * (1.08))
 
         if VelVec_x > -0.247 and VelVec_x < 0.247 then
-                velVecHUDX:set(VelVec_x)        
+                FPVHUDX:set(VelVec_x)        
         end
 
-        if velVecHUDY:get() < -0.26 then
-                VV_LimitedLower:set(1)
-        elseif velVecHUDY:get() > 0.125 then
-                VV_LimitedUpper:set(1)
+        if FPVHUDY:get() < -0.26 then
+                FPVLowLim:set(1)
+        elseif FPVHUDY:get() > 0.125 then
+                FPVUpLim:set(1)
         else 
-                VV_LimitedLower:set(0)
-                VV_LimitedUpper:set(0)
+                FPVLowLim:set(0)
+                FPVUpLim:set(0)
         end
 
 

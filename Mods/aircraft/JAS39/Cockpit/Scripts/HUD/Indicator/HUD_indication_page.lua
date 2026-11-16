@@ -1,7 +1,9 @@
+-- TODO:
+-- Make the Moving_Sides move smoother than FPV, sagging behind
 addHUDSimple("Moving_Sides", nil, nil, "HUD_Base", nil, nil, {"HUDSidesX", "HUDSidesY"}, {{ctrl.moveX, 0, mult}, {ctrl.moveY, 1, mult}})
 
 
-local leftSideX = -d2Mr(7.767) -- Distance from the velvec/center to the right most element (ex: landing speed) of the speed tape column
+local leftSideX = -d2Mr(7.767) -- Distance from the Flight_Path_Vector/center to the right most element (ex: landing speed) of the speed tape column
 local leftSideWidth = d2Mr(2.75)
 local leftSideHeight = d2Mr(8.5)
 
@@ -11,7 +13,7 @@ addHUDBox( -- TODO: Make this clip out from the HUD Sphere
 )
 
 addHUDText("AoA_@", {-17, 65}, "Left_Side", nil, nil, nil, nil, "@", nil, HUDStrdefs.alpha)
-addHUDTextParam("AoA_Readout", {20, -1}, "AoA_@", nil, nil, nil, nil, "AoA", align.RC)
+addHUDTextParam("AoA_Readout", {20, -1}, "AoA_@", nil, nil, nil, nil, "AoA", align.RC) -- {"-%2.2f"}
 
 addHUDText("G_G", {-17, 50}, "Left_Side", nil, nil, nil, nil, "G")
 addHUDTextParam(
@@ -102,32 +104,14 @@ addHUDTextParam("GS_Readout", {30.5}, "GS_GS", nil, nil, nil, nil, "txtGS", alig
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 -- TODO Altitude Scale:
 -- (Add runway altitude box for future functionality.)
 -- (If a runway is selected - show altitude readout under 10 000 ft, 100 ft resolution? (check panda vid))
 -- (Make the altitude scale work with negative numbers (works until like -75 ft, good enough for now))
+-- 77 should dissapear if ralt is over 30k ft, not if baro is over 30k ft.
+-- Check mask width
 
-local rightSideX = d2Mr(7.767) -- Distance from the velvec/center to the right most element (ex: landing speed) of the speed scale column
+local rightSideX = d2Mr(7.767) -- Distance from the Flight_Path_Vector/center to the right most element (ex: landing speed) of the speed scale column
 local rightSideWidth = d2Mr(2.75)
 
 addHUDSimple("Right_Side", {rightSideX + rightSideWidth / 2}, nil, "Moving_Sides", nil, nil, {"HUDRightSideX"}, {{ctrl.moveX, 0, mult}})
@@ -231,8 +215,8 @@ addHUDText(
 
 
 addHUDSimple("Declutt_Altitude_Base", {0, 7}, nil, "Right_Side", nil, nil, {"altitudeDeclutt"}, {{ctrl.compareNum, 0, 1}})
-addHUDText("D_Alt_A", nil, "Declutt_Altitude_Base", hcr.rw, nil, {"altMode"}, {{ctrl.compareNum, 0, 1}}, "A")
-addHUDText("D_Alt_RA", nil, "Declutt_Altitude_Base", hcr.rw, nil, {"altMode"}, {{ctrl.compareNum, 0, 2}}, "RA")
+addHUDText("D_Alt_A", nil, "Declutt_Altitude_Base", nil, nil, {"altMode"}, {{ctrl.compareNum, 0, 1}}, "A")
+addHUDText("D_Alt_RA", nil, "Declutt_Altitude_Base", nil, nil, {"altMode"}, {{ctrl.compareNum, 0, 2}}, "RA")
 addHUDSimple("D_Alt_Readout_Base", {11, -12}, nil, "Declutt_Altitude_Base", nil, nil, {"HUDAltReadoutAvail"}, {{ctrl.compareNum, 0, 1}})
 addHUDTextParam(
 	"D_Alt_Readout_Low", nil, "D_Alt_Readout_Base", nil, nil, {"HUDAltReadout"}, {{ctrl.inRange, 0, -1000, 1000}},
@@ -253,82 +237,195 @@ addHUDText( -- Such a bad way to fix it, but hey, it works.
 
 
 
+-- TODO:
+-- Check if vert lines are the correct size
+-- Lift up the lines so the arrow touches the bottom of them.
+local headingTapeWidth = d2Mr(5.5) / 2
+local headingScaleMaskHeight = (d2Mr(1.175) + speedTapeWidth / 2) / 2
 
-
-
-
-
-
-
-
-
-
-
-
-
-dofile(LockOn_Options.script_path .. "HUD/Indicator/HUD_Sphere.lua")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-addHUDSimple("Lower_Bar", {0, -254.17}, nil, "HUD_Base", nil, nil, {"DSI_STATE", "DSI_UP"}, {{ctrl.compareNum, 0, 1}, {ctrl.moveY, 1, .175}})
-
-addHUDText(nil, {-138}, "Lower_Bar", nil, nil, {"landingMode"}, {{ctrl.compareNum, 0, 1}}, "L")
-
-addHUDText(nil, {-20}, "Lower_Bar", nil, nil, {"RADAR_MODE"}, {{ctrl.inRange, 0, .9, 3.1}}, "RDR")
-
-addHUDTextParam(
-	nil, {100}, "Lower_Bar", nil, nil, {"selectedPylon"}, {{ctrl.inRange, 0, -.9, 10.9}}, "selectedPylonName",
-	nil, {"%s"}
+addHUDSimple(
+	"Heading_Scale_Base", {0, d2Mr(6) - headingScaleMaskHeight}, nil, "Moving_Sides", nil, nil, {"weaponsMode"},
+	{{ctrl.compareNum, 0, -1}}
 )
-addHUDText(nil, {115}, "Lower_Bar", nil, nil, {"selectedPylon"}, {{ctrl.compareNum, 0, 11}}, "G   ", align.RC)
-addHUDTextParam(nil, {115}, "Lower_Bar", nil, nil, {"selectedPylon"}, {{ctrl.compareNum, 0, 11}}, "ammoCount", align.RC)
+
+addHUDMeshPoly(
+	"Hdg_Scale_Mask", {0, -speedTapeWidth / 4}, nil, "Heading_Scale_Base", hcr.inc, HUDLvls.mask, nil,
+	nil, {{-headingTapeWidth, -headingScaleMaskHeight}, {headingTapeWidth, -headingScaleMaskHeight}, {headingTapeWidth, headingScaleMaskHeight}, {-headingTapeWidth, headingScaleMaskHeight}},
+	{0, 1, 2, 0, 2, 3}, materials.HUDMask, true
+)
+
+addHUDSimple("Hdg_Scale_Moving_Base", nil, nil, "Heading_Scale_Base", nil, nil, {"HEADING"}, {{ctrl.moveX, 0, -.00193735}})
+
+local headingLineSpacing = math.rad(.925) * 1000
+local headinglineThickness = .46
+
+for i = -4, 76 do -- make 4 extra lines on each side of north, north is 0. 34 <18> 02
+	local j
+	local hdgLineHeight
+
+	if i < 0 then
+		j = 36 + (i / 2)
+	elseif i > 70 then
+		j = (i - 72) / 2
+	else
+		j = i / 2
+	end
+
+	if j < 10 then
+		j = "0" .. j
+	end
+
+	if i % 2 == 0 then
+		hdgLineHeight = math.rad(.25) * 1000
+
+		addHUDText("Hdg_Digit_" .. j, {headingLineSpacing * i, 5}, "Hdg_Scale_Moving_Base", nil, HUDLvls.mask, nil, nil, j)
+	else
+		hdgLineHeight = math.rad(.125) * 1000
+	end
 
 
--- HUD_Aiming_Circle_Range_R = add_text_hud("R", 40, 0, "Lower_Bar", "Gripen_Font_green", HUD_Normal_Size)
--- HUD_Aiming_Circle_Range_R.element_params = {"HUDBrightness", "RADAR_STT_RANGE_NM"}
--- HUD_Aiming_Circle_Range_R.controllers    = {{ctrl.opacity,0}, {ctrl.inRange,1, 0, 999}}
--- HUD_Aiming_Circle_Range                = add_text_hud_param(45, 0, "HUDBrightness", "RADAR_STT_RANGE_NM", "%.1f", "Lower_Bar", HUD_Normal_Size, "Gripen_Font_green", "LeftCenter")
--- HUD_Aiming_Circle_Range.element_params = {"HUDBrightness", "RADAR_STT_RANGE_NM"}
--- HUD_Aiming_Circle_Range.controllers    = {{ctrl.opacity,0}, {ctrl.inRange,1, 0, 999}, {ctrl.text,1}}
+	addHUDMeshPoly(
+		"Hdg_Line_" .. j, {headingLineSpacing * i, -10}, nil, "Hdg_Scale_Moving_Base", nil, HUDLvls.mask, nil, nil,
+		{{-headinglineThickness, hdgLineHeight}, {headinglineThickness, hdgLineHeight}, {headinglineThickness, 0}, {-headinglineThickness, 0}}, {0, 1, 2, 0, 2, 3}
+	)
+end
+
+addHUDSimpleLine(
+	"Hdg_Scale_Arrow", {0, -headingScaleMaskHeight + speedTapeWidth / 2}, nil, "Heading_Scale_Base", nil, HUDLvls.mask, nil, nil, nil,
+	{{-3.25, -speedTapeWidth / 2}, {0}, {3.25, -speedTapeWidth / 2}}
+)
+
+addHUDSimple(
+	"Hdg_Scale_POI_Base", {0, (-headingScaleMaskHeight + speedTapeWidth / 2) - (speedTapeWidth / 2) * 1.5}, nil, "Hdg_Scale_Moving_Base", nil, nil,
+	{"CURRENT_PHASE", "nextWPHeadingClampedHUD"}, {{ctrl.inRange, 0, 6.9, 8.9}, {ctrl.moveX, 1, .00193735}}
+)
+
+for i = -1, 1 do
+	local firstVert = {0, ((speedTapeWidth / 2) + (speedTapeWidth / 2) / 2.5) / 2.5} -- I don't wanna talk about it...
+
+	if i == 0 then
+		firstVert = {0, (speedTapeWidth / 2) + (speedTapeWidth / 2) / 2.5}
+	end
+
+	addHUDSimpleLine(
+		"Hdg_Scale_POI_Line_" .. i, {i * (6.5 / 3 + .75)}, nil, "Hdg_Scale_POI_Base", nil, HUDLvls.mask, nil, nil, nil,
+		{firstVert, {0}}
+	)
+end
+
+
+addHUDText("Hdg_Mode_T", {headingTapeWidth + 8, 5}, "Heading_Scale_Base", nil, nil, {"headingMode"}, {{ctrl.compareNum, 0, 1}}, "T")
+addHUDText("Hdg_Mode_M", {-headingTapeWidth - 8, 5}, "Heading_Scale_Base", nil, nil, {"headingMode"}, {{ctrl.compareNum, 0, 2}}, "M")
 
 
 
-addHUDSimple("VelVec", nil, nil, "HUD_Base", nil, nil, {"velVecHUDY", "velVecHUDX"}, {{ctrl.moveY, 0, mult}, {ctrl.moveX, 1, mult}})
+addHUDSimple("Flight_Path_Vector", nil, nil, "HUD_Base", nil, nil, {"FPVHUDY", "FPVHUDX"}, {{ctrl.moveY, 0, mult}, {ctrl.moveX, 1, mult}})
+
+addHUDMeshPoly(
+	"FPV_Horizontal_Wings_Unlimited", nil, nil, "Flight_Path_Vector", nil, nil, {"CURRENT_PHASE", "FPVLimited", "weaponsMode"},
+	{{ctrl.inRange, 0, 5.9, 9.9}, {ctrl.compareNum, 1, 0}, {ctrl.compareNum, 2, -1}},
+	{{-19, -.5}, {-5.4, -.5}, {-19, .5}, {-5.4, .5},
+		{19,  -.5}, {5.4, -.5}, {19, .5}, {5.4, .5}},
+	{0, 1, 2, 3, 2, 1,
+		4, 5, 6, 7, 6, 5}
+)
+addHUDCircle("FPV_Circle", nil, nil, "FPV_Horizontal_Wings_Unlimited", nil, nil, nil, nil, 5.5, 4.5, 360, 25)
+addHUDSimpleLine(
+	"FPV_Vertical_Fin", {0, -16.8}, nil, "Flight_Path_Vector", nil, nil, {"velvecY", "velvecBlink", "FPVUpLim"},
+	{{ctrl.moveY, 0, 14.3 * .001}, {ctrl.inRange, 1, -.1, .5}, {ctrl.compareNum, 2, 0}}, nil, {{0, 4.075}, {0, 14.075}}
+)
+
+addHUDMeshPoly(
+	"FPV_Horizontal_Lines_Limited", nil, nil, "Flight_Path_Vector", nil, nil, {"FPVLimited", "weaponsMode"},
+	{{ctrl.compareNum, 0, 1}, {ctrl.compareNum, 1, -1}},
+	{{-19, -.5}, {-8, -.5}, {-19, .5}, {-8, .5},
+		{19,  -.5}, {8, -.5}, {19, .5}, {8, .5}},
+	{0, 1, 2, 3, 2, 1,
+		4, 5, 6, 7, 6, 5}
+)
+addHUDTextParam(
+	"FPV_Limited_AoA_Readout", nil, "FPV_Horizontal_Lines_Limited", nil, nil, {"CURRENT_PHASE"}, {{ctrl.inRange, 0, 6.9, 8.9}},
+	"AoA"
+)
+
+
+
+local horizonGap = d2Mr(8) / 2 -- Half
+
+local apAltBoxesW = d2Mr(.5) / 2 -- Half
+local apAltBoxesH = d2Mr(1.5)
+
+addHUDSimple("Autopilot_Altitude_Half_Boxes_Base", {0}, nil, "Flight_Path_Vector", nil, nil, {"rollRad"}, {{ctrl.rotate, 0, 1}})
+
+for i = -1, 1, 2 do
+	-- TODO:
+	-- Have the horizon gap follow the FPV, not the X-AX
+	addHUDSimpleLine(
+		"Horizon_Line_" .. i, nil, nil, "HUD_Pitch", nil, nil, nil, nil,
+		nil, {{999 * i}, {horizonGap * i}}
+	)
+
+	addHUDSimpleLine(
+		"Ap_Alt_Half_Box_" .. i, {66 * i}, nil, "Autopilot_Altitude_Half_Boxes_Base", nil, nil, {"AutoPilotMode"}, {{ctrl.compareNum, 0, -2}},
+		nil, {{0}, {apAltBoxesW * i}, {apAltBoxesW * i, -apAltBoxesH}, {0, -apAltBoxesH}}
+	)
+
+	addHUDSimpleLine(
+		"Ap_Alt_Box_" .. i, {66 * i}, nil, "HUD_Pitch", nil, nil, {"AutoPilotMode"}, {{ctrl.compareNum, 0, 2}},
+		nil, {{apAltBoxesW}, {-apAltBoxesW}, {-apAltBoxesW, -apAltBoxesH}, {apAltBoxesW, -apAltBoxesH}, {apAltBoxesW}}
+	)
+end
+
+
+--[[ A relic from the old times :P
+
+local HorizonLineHeadingDots                        = add_text_hud("!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!", 0, 0, HUD_PITCH , "Gripen_Font_green", HUD_HorizonLineHeading, "CenterCenter")
+--lol
+HorizonLineHeadingDots.init_pos                        = {0.03025, 0.0110,0.1}
+HorizonLineHeadingDots.element_params        = {"HEADING_HUD"}
+HorizonLineHeadingDots.controllers                = { {"move_left_right_using_parameter",0, -0.0110555}  }
+
+--]]
+
+addHUDText(
+	"Horizon_Line_Dots", {5.67, 2.5}, "HUD_Pitch", nil, nil, {"HEADING"}, {{ctrl.moveX, 0, -.0104546}},
+	"!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!",
+	-- lol
+	nil, HUDStrdefs.headingLine
+)
+
+
+
+
+
+
+addHUDMeshPoly(
+	"Glide_Slope", {0, math.rad(-2.86) * 1000}, nil, "HUD_Pitch", nil, nil, {"LANDING_MODE", "GLIDE_SLOPE_MOVE"},
+	{{ctrl.compareNum, 0, 1}, {ctrl.moveY, 1, mult}},
+	{{-90, -.5}, {-20, -.5}, {-90, .5}, {-20, .5},
+		{90,  -.5}, {20, -.5}, {90, .5}, {20, .5}},
+	{0, 1, 2, 3, 2, 1,
+		4, 5, 6, 7, 6, 5}
+)
 
 
 local aimingCircle = addHUDCircle(
-	nil, nil, nil, "VelVec", nil, nil, {"weaponsMode"}, {{ctrl.inRange, 0, .9, 4.1}}, .5,
+	nil, nil, nil, "Flight_Path_Vector", nil, nil, {"weaponsMode"}, {{ctrl.inRange, 0, .9, 4.1}}, .5,
 	0, 360, 8
 )
-
+-- HUD_Aiming_Circle_Range_R = add_text_hud("R", 40, 0, "Text_Bar", "Gripen_Font_green", HUD_Normal_Size)
+-- HUD_Aiming_Circle_Range_R.element_params = {"HUDBrightness", "RADAR_STT_RANGE_NM"}
+-- HUD_Aiming_Circle_Range_R.controllers    = {{ctrl.opacity,0}, {ctrl.inRange,1, 0, 999}}
+-- HUD_Aiming_Circle_Range                = add_text_hud_param(45, 0, "HUDBrightness", "RADAR_STT_RANGE_NM", "%.1f", "Text_Bar", HUD_Normal_Size, "Gripen_Font_green", "LeftCenter")
+-- HUD_Aiming_Circle_Range.element_params = {"HUDBrightness", "RADAR_STT_RANGE_NM"}
+-- HUD_Aiming_Circle_Range.controllers    = {{ctrl.opacity,0}, {ctrl.inRange,1, 0, 999}, {ctrl.text,1}}
 local aimingCircleLeftGunLine = addHUDSimpleLine(
 	nil, nil, nil, aimingCircle, nil, nil, {"weaponsMode", "rollRad"},
 	{{ctrl.compareNum, 0, 3}, {ctrl.rotate, 1, 1}}, nil, {{-17.5, -7}, {-17.5, 7}}
 )
 copyElement(aimingCircleLeftGunLine, {"vertices"}, {{{17.5, -7}, {17.5, 7}}})
 copyElement(
-	aimingCircleLeftGunLine, {"parent_element", "element_params", "controllers"}, {"HUD_Base", {"HUDBrightness", "weaponsMode", "WS_GUN_PIPER_AZIMUTH", "WS_GUN_PIPER_ELEVATION", "velVecHUDY", "velVecHUDX"},
+	aimingCircleLeftGunLine, {"parent_element", "element_params", "controllers"}, {"HUD_Base", {"HUDBrightness", "weaponsMode", "WS_GUN_PIPER_AZIMUTH", "WS_GUN_PIPER_ELEVATION", "FPVHUDY", "FPVHUDX"},
 		{{ctrl.opacity, 0}, {ctrl.compareNum, 1, 3}, {ctrl.setPoint, 0, 5, 4, mult, mult}, {ctrl.setPoint, 1, 2, 3, mult, mult}}}
 )
 
@@ -406,6 +503,10 @@ addHUDSimpleLine( -- TODO: Fix
 	nil, nil, nil, "HUD_Base", hcr.rw, nil, {"rollRad", "WS_IR_MISSILE_TARGET_AZIMUTH", "WS_IR_MISSILE_TARGET_ELEVATION"},
 	{{ctrl.rotate, 0, 0}, {ctrl.moveX, 1, mult}, {ctrl.moveY, 2, mult}}, nil, {{-5, 0}, {-3, -6.25}, {3, -6.25}, {5, 0}}
 )
+addHUDSimpleLine( -- TODO: Fix
+	nil, nil, nil, "HUD_Base", hcr.rw, nil, {"rollRad", "WS_IR_MISSILE_TARGET_AZIMUTH", "WS_IR_MISSILE_TARGET_ELEVATION"},
+	{{ctrl.rotate, 0, 0}, {ctrl.moveX, 1, mult}, {ctrl.moveY, 2, mult}}, nil, {{0, -5}, {0, 5}}
+)
 
 
 
@@ -417,7 +518,7 @@ addHUDMeshPoly(
 
 
 addHUDMeshPoly(
-	"Takeoff_Lines", nil, nil, "HUD_Pitch", nil, nil, {"CURRENT_PHASE_CO", "CURRENT_PHASE_PAL", "landingMode"},
+	"Takeoff_Lines", nil, nil, "HUD_Pitch", nil, nil, {"CURRENT_PHASE_CO", "CURRENT_PHASE_PAL", "LANDING_MODE"},
 	{{ctrl.compareNum, 0, 0}, {ctrl.compareNum, 1, 0}, {ctrl.compareNum, 2, 0}},
 	{{-67.4, .5}, {-66, .5}, {-67.4, math.rad(4300)}, {-66, math.rad(4300)}, -- Left line.
 		{67.4,  .5}, {66, .5}, {67.4, math.rad(4300)}, {66, math.rad(4300)}}, -- Right line.
@@ -427,159 +528,32 @@ addHUDMeshPoly(
 
 
 
-addHUDMeshPoly(
-	"VelVec_Horizontal_Lines", nil, nil, "VelVec", nil, nil, {"CURRENT_PHASE", "VV_LimitedLower", "VV_LimitedUpper", "weaponsMode"},
-	{{ctrl.inRange, 0, 5.9, 9.9}, {ctrl.compareNum, 1, 0}, {ctrl.compareNum, 2, 0}, {ctrl.compareNum, 3, -1}},
-	{{-19, -.5}, {-5.4, -.5}, {-19, .5}, {-5.4, .5},
-		{19,  -.5}, {5.4, -.5}, {19, .5}, {5.4, .5}},
-	{0, 1, 2, 3, 2, 1,
-		4, 5, 6, 7, 6, 5}
-)
-addHUDCircle(
-	"VelVec_Circle", nil, nil, "VelVec", nil, nil, {"CURRENT_PHASE", "VV_LimitedLower", "VV_LimitedUpper", "weaponsMode"},
-	{{ctrl.inRange, 0, 5.9, 9.9}, {ctrl.compareNum, 1, 0}, {ctrl.compareNum, 2, 0}, {ctrl.compareNum, 3, -1}}, 5.5, 4.1, 360, 25
-)
-addHUDSimpleLine(
-	"VelVec_Vertical_Line", {0, -16.8}, nil, "VelVec", nil, nil, {"HUD_VELVEC_VER_LINE_POS", "HUD_VELVEC_VER_LINE_BLINK"},
-	{{ctrl.moveY, 0, 14 * .001}, {ctrl.inRange, 1, -.1, .5}}, nil, {{0, 4.075}, {0, 14.075}}
+
+
+
+
+
+
+
+
+addHUDSimple(
+	"Text_Bar", {0, -d2Mr(15) + 5}, nil, "HUD_Base", nil, nil, {"HUDTextBarState", "HUDTextBarUp"},
+	{{ctrl.compareNum, 0, 1}, {ctrl.moveY, 1, .175}}
 )
 
-addHUDMeshPoly(
-	"VelVec_Horizontal_Lines_Limited", nil, nil, "VelVec", nil, nil, {"VV_LimitedLower", "weaponsMode"},
-	{{ctrl.compareNum, 0, 1}, {ctrl.compareNum, 1, -1}},
-	{{-19, -.5}, {-8, -.5}, {-19, .5}, {-8, .5},
-		{19,  -.5}, {8, -.5}, {19, .5}, {8, .5}},
-	{0, 1, 2, 3, 2, 1,
-		4, 5, 6, 7, 6, 5}
-)
+addHUDText("Landing_Mode_Ind", {-138}, "Text_Bar", nil, nil, {"LANDING_MODE"}, {{ctrl.compareNum, 0, 1}}, "L")
+
+addHUDText("Radar_Guidance_Ind", {-20}, "Text_Bar", nil, nil, {"RADAR_MODE"}, {{ctrl.inRange, 0, .9, 3.1}}, "RDR")
+addHUDText("Radar_Search_Ind", {25}, "Radar_Guidance_Ind", nil, nil, {"RADAR_MODE"}, {{ctrl.compareNum, 0, 1}}, "LP")
+addHUDText("Radar_STT_Ind", {25}, "Radar_Guidance_Ind", nil, nil, {"RADAR_MODE"}, {{ctrl.inRange, 0, 1.9, 3.1}}, "ST")
+
+
 addHUDTextParam(
-	"VelVec_Limited_AoA_Readout", nil, "VelVec_Horizontal_Lines_Limited", nil, nil, {"CURRENT_PHASE"}, {{ctrl.inRange, 0, 6.9, 8.9}},
-	"AoA"
+	nil, {100}, "Text_Bar", nil, nil, {"selectedPylon"}, {{ctrl.inRange, 0, -.9, 10.9}}, "selectedPylonName",
+	nil, {"%s"}
 )
-
-
-
-addHUDMeshPoly(
-	"Altitude_Keeping_Boxes", nil, nil, "HUD_Pitch", nil, nil, {"ALT_HOLD"}, {{ctrl.compareNum, 0, 1}},
-	{{-77.426504, -27.97108}, {-76.026504, -27.97108}, {-77.426504, -.5}, {-76.026504, -.5}, -- Left box.
-		{-66,        -27.97108}, {-76.026504, -26.57108}, {-66, -26.57108},
-		{-67.4,     -26.57108}, {-67.4, -.5}, {-66, -.5},
-		{77.426504, -27.97108}, {76.026504, -27.97108}, {77.426504, -.5}, {76.026504, -.5}, -- Right box.
-		{66,   -27.97108}, {76.026504, -26.57108}, {66, -26.57108},
-		{67.4, -26.57108}, {67.4, -.5}, {66, -.5}},
-	{0, 1, 2, 3, 2, 1, -- Left box.
-		1, 4, 5, 6, 5, 4,
-		7, 6, 8, 9, 8, 6,
-		10, 11, 12, 13, 12, 11, -- Right box.
-		11, 14, 15, 16, 15, 14,
-		17, 16, 18, 19, 18, 16}
-)
-addHUDMeshPoly(
-	"Altitude_Keeping_Boxes_Cs", nil, nil, "VelVec", nil, nil, {"rollRad", "AutoPilotMode"}, {{ctrl.rotate, 0, 1}, {ctrl.compareNum, 1, -2}},
-	{{-77.426504, -.5}, {-66, -.5}, {-77.426504, .5}, {-66, .5}, -- Left C.
-		{-77.426504, -27.97108}, {-76.026504, -27.97108}, {-76.026504, -.5},
-		{-66,       -27.97108}, {-76.026504, -26.57108}, {-66, -26.57108},
-		{77.426504, -.5}, {66, -.5}, {77.426504, .5}, {66, .5}, -- Right C.
-		{77.426504, -27.97108}, {76.026504, -27.97108}, {76.026504, -.5},
-		{66,        -27.97108}, {76.026504, -26.57108}, {66, -26.57108}},
-	{0, 1, 2, 3, 2, 1, -- Left C.
-		4, 5, 0, 6, 0, 5,
-		5, 7, 8, 9, 8, 7,
-		10, 11, 12, 13, 12, 11, -- Right C.
-		14, 15, 10, 16, 10, 15,
-		15, 17, 18, 19, 18, 17}
-)
-
-
-addHUDMeshPoly(
-	"Horizon_Lines", nil, nil, "HUD_Pitch", nil, nil, nil, nil,
-	{{-9999, -.5}, {-66, -.5}, {-9999, .5}, {-66, .5}, -- 72.3064976 instead of 66???
-		{9999,  -.5}, {66, -.5}, {9999, .5}, {66, .5}},
-	{0, 1, 2, 3, 2, 1,
-		4, 5, 6, 7, 6, 5}
-)
-
-
-addHUDMeshPoly(
-	"Glide_Slope", {0, math.rad(-2.86) * 1000}, nil, "HUD_Pitch", nil, nil, {"landingMode", "GLIDE_SLOPE_MOVE"},
-	{{ctrl.compareNum, 0, 1}, {ctrl.moveY, 1, mult}},
-	{{-90, -.5}, {-20, -.5}, {-90, .5}, {-20, .5},
-		{90,  -.5}, {20, -.5}, {90, .5}, {20, .5}},
-	{0, 1, 2, 3, 2, 1,
-		4, 5, 6, 7, 6, 5}
-)
-
-
---[[
-local headingTapeWidth = math.rad(5) * 1000 / 2
-
-addHUDMeshPoly(
-	"Heading_Tape_Mask", {0, math.rad(2.75) * 1000}, nil, "Moving_Sides", hcr.incIf, nil, {"weaponsMode"},
-	{{ctrl.compareNum, 0, -1}}, {{-headingTapeWidth, -.04 * fov2MilRad}, {headingTapeWidth, -.04 * fov2MilRad}, {headingTapeWidth, -.17 * fov2MilRad}, {-headingTapeWidth, -.17 * fov2MilRad}},
-	{0, 1, 2, 0, 2, 3}, nil, true
-)
-
-addHUDSimple("Heading_Tape_Base", nil, nil, "Moving_Sides", nil, nil, {"HEADING"}, {{ctrl.moveX, 0, -.0020944}})
-
-local headingLineSpacing = math.rad(1) * 1000
-local headinglineThickness = .46
-
-for i = -4, 76 do -- make 4 extra lines on each side of north, north is 0. 34 <18> 02
-	local j
-	local hdgLineHeight
-
-	if i < 0 then
-		j = 36 + (i / 2)
-	elseif i > 70 then
-		j = (i - 72) / 2
-	else
-		j = i / 2
-	end
-
-	if j < 10 then
-		j = "0" .. j
-	end
-
-	if i % 2 == 0 then
-		hdgLineHeight = math.rad(.5) * 1000
-
-		addHUDText("Heading_Digit_" .. j, {headingLineSpacing * i, 33, .1}, "Heading_Tape_Base", hcr.decIf, HUDLvls.mask, nil, nil, j)
-	else
-		hdgLineHeight = math.rad(.25) * 1000
-	end
-
-
-	addHUDMeshPoly(
-		"Heading_Line_" .. j, {headingLineSpacing * i, 18}, nil, "Heading_Tape_Base", hcr.decIf, HUDLvls.mask, nil, nil,
-		{{-headinglineThickness, hdgLineHeight}, {headinglineThickness, hdgLineHeight}, {headinglineThickness, 0}, {-headinglineThickness, 0}}, {0, 1, 2, 0, 2, 3}
-	)
-end
-
--- local HeadingScaleArrow           = Hud_Horizon_Line(HUD_HORIZON, 793, 987, 912, 1106, .5 * fov2MilRad)
--- HeadingScaleArrow.name            = create_guid_string()
--- HeadingScaleArrow.init_pos        = {0, math.rad(.82) * 1000, 0}
--- HeadingScaleArrow.parent_element  = "Moving_Sides"
--- HeadingScaleArrow.h_clip_relation = h_clip_relations.DECREASE_IF_LEVEL
--- HeadingScaleArrow.level           = HUD_DEFAULT_LEVEL + 1
--- HeadingScaleArrow.element_params  = {"HUDBrightness"}
--- HeadingScaleArrow.controllers     = {{ctrl.opacity, 0}}
--- AddHudElement3(HeadingScaleArrow)
-
-addHUDText("Heading_Mode_T", {-.30 * fov2MilRad, .15 * fov2MilRad}, "Moving_Sides", nil, nil, {"headingMode"}, {{ctrl.compareNum, 0, 1}}, "T")
-addHUDText("Heading_Mode_M", {-.30 * fov2MilRad, .15 * fov2MilRad}, "Moving_Sides", nil, nil, {"headingMode"}, {{ctrl.compareNum, 0, 2}}, "M")
-
---]]
-
-addHUDText(
-	"Horizon_Line_Dots", {.03025 * fov2MilRad, 2.5}, "HUD_Pitch", nil, nil, {"heading"}, {{ctrl.moveX, 0, -.0110555}},
-	"!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!,,,,!",
-	-- lol
-	nil, HUDStrdefs.headingLine
-)
-
-
-
-
+addHUDText(nil, {115}, "Text_Bar", nil, nil, {"selectedPylon"}, {{ctrl.compareNum, 0, 11}}, "G   ", align.RC)
+addHUDTextParam(nil, {115}, "Text_Bar", nil, nil, {"selectedPylon"}, {{ctrl.compareNum, 0, 11}}, "ammoCount", align.RC)
 
 
 
@@ -633,7 +607,7 @@ addHUDText("Declutted_G_G", {-.81 * fov2MilRad, -305.9}, "HUD_Base", nil, nil, {
 
 
 addHUDSimple(
-	"GCW_Base", nil, nil, "VelVec_Vertical_Line", hcr.decIf, HUDLvls.mask, {"rollRad", "PULLUPQUE", "CURRENT_PHASE"},
+	"GCW_Base", nil, nil, "FPV_Vertical_Fin", hcr.decIf, HUDLvls.mask, {"rollRad", "PULLUPQUE", "CURRENT_PHASE"},
 	{{ctrl.rotate, 0, 1}, {ctrl.moveY, 1, -.0004}, {ctrl.inRange, 2, 5.9, 9.9}}
 )
 local GCWLeftGround = addHUDSimpleLine(
@@ -658,3 +632,14 @@ local GCWLeftArrow = copyElement(
 	}
 )
 copyElement(GCWLeftArrow, {"vertices"}, {{{56, 35}, {5.5, 50}, {45, 35}, {56, 35}}})
+
+
+
+
+
+
+
+
+dofile(LockOn_Options.script_path .. "HUD/Indicator/HUD_Sphere.lua")
+-- TODO:
+-- Fix sphere being always being aligned with magnetic heading even when true heading is selected

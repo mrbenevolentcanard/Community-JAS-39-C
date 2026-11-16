@@ -346,17 +346,17 @@ function loadWaypoints(missionRoute)
 			get_param_handle("nextWPName"):set(waypoints[i].name:get())
 			get_param_handle("nextWPHeading"):set(az)
 
-			local selfHDG
-			if get_param_handle("headingMode"):get() == 1 then
-				selfHDG = 360 - math.deg(baseData.getHeading())
-			else
-				selfHDG = math.deg(baseData.getMagneticHeading())
-			end
+			local selfHDG = get_param_handle("HEADING"):get()
+			-- if get_param_handle("headingMode"):get() == 1 then
+				-- selfHDG = 360 - math.deg(baseData.getHeading())
+			-- else
+				-- selfHDG = math.deg(baseData.getMagneticHeading())
+			-- end
 
 			get_param_handle("nextWPType"):set(waypoints[i].type:get())
 
 			-- TODO: WP info on CD and mach fix on CD, correct types for every wp, (pressing T on UCP changes current W to T), W scrolls through W, T scrolls through T, L scrolls though L, change landing mode keybind.
-			get_param_handle("nextWPHeadingClampedHUD"):set(clampToRect(selfHDG - math.deg(az), 0, 14, 1, selfHDG, 0))
+			get_param_handle("nextWPHeadingClampedHUD"):set(clampToRect(selfHDG - math.deg(az), 0, 13.75, 1, selfHDG, 0))
 			get_param_handle("nextWPHeadingHUD"):set(selfHDG - math.deg(az))
 		end
 	end

@@ -22,16 +22,16 @@ HUDLvls = {
 	mask3  = 7
 }
 
-HUDStrdefs = {
+HUDStrdefs = { -- Font size (vertical_size, horizontal_size, horizontal_spacing, vertical_spacing)
 	std                     = {.007, .007, 0, 0},
-	headingLine             = {.005, .005, .008, .008},
+	headingLine             = {.005, .005, .007399, .008},
 	altitudeSmall           = {.005, .005, 0, 0},
 	pitchDigit              = {.006, .006, 0, 0},
 	alpha                   = {.0085, .0085, 0, 0},
 	half                    = {.005, .005, 0, 0},
 	whenYouCantFindTheDigit = {.1, .1, 0, 0},
 	hundreds                = {.0042, .0042, 0, 0},
-	seventyseven            = {.77 * .007, .77 * .007, 0, 0}
+	seventyseven            = {.77 * .007, .77 * .007, -.001, 0}
 }
 
 

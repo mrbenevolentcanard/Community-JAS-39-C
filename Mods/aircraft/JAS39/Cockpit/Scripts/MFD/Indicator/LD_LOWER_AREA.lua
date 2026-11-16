@@ -73,7 +73,7 @@ local adi_Attitude				= create_mfd_VELVEC(ADI_VEELOCITYVECTOR, 20, 55, 354, 285,
 adi_Attitude.name				= create_guid_string()
 adi_Attitude.init_pos			= {0, -0.77}
 adi_Attitude.parent_element		= GENERAL_PAGE.name
-adi_Attitude.element_params 	= {"velVecHUDY","velVecHUDX"}
+adi_Attitude.element_params 	= {"FPVHUDY","FPVHUDX"}
 adi_Attitude.controllers    	= { {"move_up_down_using_parameter",0, 0.036}, {"move_left_right_using_parameter",1, 0.036}}
 AddElement(adi_Attitude)
 	
@@ -911,7 +911,7 @@ HORIZON_LINE_FPM			= create_mfd_tex(CENTER_DISPLAY_COLOR, 1504, 1717, 1709 , 181
 HORIZON_LINE_FPM.name			= create_guid_string()
 HORIZON_LINE_FPM.init_pos		= {0, 0.043}
 HORIZON_LINE_FPM.parent_element	= HORIZON_LINE.name
-HORIZON_LINE_FPM.element_params  = {"ADI_ROLL","velVecHUDY","velVecHUDX","ADI_PITCH"}
+HORIZON_LINE_FPM.element_params  = {"ADI_ROLL","FPVHUDY","FPVHUDX","ADI_PITCH"}
 HORIZON_LINE_FPM.controllers	 = {{"rotate_using_parameter" ,0, -1},{"move_up_down_using_parameter",1, 0.036}, {"move_left_right_using_parameter",2, 0.036},{"move_up_down_using_parameter",3, -0.036} }
 AddElement3(HORIZON_LINE_FPM)
 
@@ -919,7 +919,7 @@ GROUNDCOLLISION			= create_mfd_tex(CENTER_DISPLAY_COLOR, 1380, 145, 1680 , 298, 
 GROUNDCOLLISION.name			= create_guid_string()
 GROUNDCOLLISION.init_pos		= {0, 0.023}
 GROUNDCOLLISION.parent_element	= HORIZON_LINE_FPM.name
-GROUNDCOLLISION.element_params  = {"PULLUPQUE", "rollRad", "velVecHUDY","CURRENT_PHASE_STATIONARY","CURRENT_PHASE_PARKED","CURRENT_PHASE_TAXI",
+GROUNDCOLLISION.element_params  = {"PULLUPQUE", "rollRad", "FPVHUDY","CURRENT_PHASE_STATIONARY","CURRENT_PHASE_PARKED","CURRENT_PHASE_TAXI",
 												"CURRENT_PHASE_TGR","CURRENT_PHASE_ROT","CURRENT_PHASE_TD","CURRENT_PHASE_LR","CURRENT_PHASE_PAL", "PULLMORE"}
 GROUNDCOLLISION.controllers	 	= {{"parameter_in_range",0, -10000,0},{"rotate_using_parameter" ,1, 1.00},
 								  {"move_up_down_using_parameter",2, 0.1} ,{"parameter_compare_with_number",3, 0},{"parameter_compare_with_number",4, 0},

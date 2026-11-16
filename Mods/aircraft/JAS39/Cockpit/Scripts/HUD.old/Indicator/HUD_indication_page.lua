@@ -247,7 +247,7 @@ AddHudElement(TakeOffLinesVV)
 local VelocityVectorHUD                                 = Hud_Horizon_Line(HUD_HORIZON, 1506, 1065, 1794, 1145, 1)
 VelocityVectorHUD.name                                        = create_guid_string()
 VelocityVectorHUD.init_pos                                = {0, -0.0212, 0}
-VelocityVectorHUD.element_params                 = {"velVecHUDY","velVecHUDX","CURRENT_PHASE_STATIONARY","CURRENT_PHASE_PARKED","CURRENT_PHASE_TAXI","CURRENT_PHASE_TGR","CURRENT_PHASE_ROT","CURRENT_PHASE_LO","CURRENT_PHASE_TD","CURRENT_PHASE_LR","VV_LimitedLower","VV_LimitedUpper","HUDBrightness"} --
+VelocityVectorHUD.element_params                 = {"FPVHUDY","FPVHUDX","CURRENT_PHASE_STATIONARY","CURRENT_PHASE_PARKED","CURRENT_PHASE_TAXI","CURRENT_PHASE_TGR","CURRENT_PHASE_ROT","CURRENT_PHASE_LO","CURRENT_PHASE_TD","CURRENT_PHASE_LR","FPVLowLim","FPVUpLim","HUDBrightness"} --
 VelocityVectorHUD.controllers                        = {{"move_up_down_using_parameter",0, 0.6465},{"move_left_right_using_parameter",1, 0.6465}, {"parameter_in_range" ,2, -0.1,0.1}, {"parameter_in_range" ,3, -0.1,0.1}, {"parameter_in_range" ,4, -0.1,0.1}, {"parameter_in_range" ,5, -0.1,0.1}, {"parameter_in_range" ,6, -0.1,0.1}, {"parameter_in_range" ,7, -0.1,0.1}, {"parameter_in_range" ,8, -0.1,0.1},{"parameter_in_range" ,9, -0.1,0.1}, {"parameter_in_range" ,10, -0.1,0.1}, {"parameter_in_range" ,11, -0.1,0.1},{"opacity_using_parameter" ,12} } --
 VelocityVectorHUD.parent_element                = HUD_BASE.name
 AddHudElement(VelocityVectorHUD)
@@ -255,7 +255,7 @@ AddHudElement(VelocityVectorHUD)
 local VelocityVectorLimited                                = Hud_Horizon_Line(HUD_HORIZON, 454, 1097, 742, 1107, 1.5)
 VelocityVectorLimited.name                                        = create_guid_string()
 VelocityVectorLimited.init_pos                                = {0, -1.29, 0}
-VelocityVectorLimited.element_params                 = {"HUDBrightness", "VV_LimitedLower","velVecHUDX"}
+VelocityVectorLimited.element_params                 = {"HUDBrightness", "FPVLowLim","FPVHUDX"}
 VelocityVectorLimited.controllers                        = {{"opacity_using_parameter" ,0},  {"parameter_in_range" ,1, 0.9,1.1},{"move_left_right_using_parameter",2, 0.6465}}
 VelocityVectorLimited.parent_element                = HUD_BASE.name
 AddHudElement(VelocityVectorLimited)
@@ -292,7 +292,7 @@ local X_AxisSymbol                                                = Hud_Horizon_
 X_AxisSymbol.name                                                = create_guid_string()
 X_AxisSymbol.init_pos                                        = {0, -0.022, 0}
 X_AxisSymbol.parent_element                                = HUD_BASE.name
-X_AxisSymbol.element_params                                = {"HUDBrightness","CURRENT_PHASE_CO","velVecHUDY","velVecHUDX","CURRENT_PHASE_PAL","VV_LimitedLower"}
+X_AxisSymbol.element_params                                = {"HUDBrightness","CURRENT_PHASE_CO","FPVHUDY","FPVHUDX","CURRENT_PHASE_PAL","FPVLowLim"}
 X_AxisSymbol.controllers                                = {{"opacity_using_parameter" ,0},{"parameter_in_range" ,1,-0.1,0.1}, {"move_up_down_using_parameter",2, 0.6465},{"move_left_right_using_parameter",3, 0.6465}, {"parameter_in_range" ,4,-0.1,0.1}, {"parameter_in_range" ,5,-0.1,0.1}  }                                                                
 AddHudElement(X_AxisSymbol)
 
@@ -361,7 +361,7 @@ local glideSlope          = Hud_Horizon_Line(HUD_HORIZON, 849, 1567, 2451, 1581,
 glideSlope.name           = create_guid_string()
 glideSlope.init_pos       = {0, -.23967}
 glideSlope.parent_element = HUD_PITCH.name
-glideSlope.element_params = {"HUDBrightness", "landingMode", "velVecHUDX"}
+glideSlope.element_params = {"HUDBrightness", "landingMode", "FPVHUDX"}
 glideSlope.controllers    = {{"opacity_using_parameter", 0}, {"parameter_compare_with_number", 1, 1}, {"move_left_right_using_parameter", 2, .6465}}
 AddHudElement(glideSlope)
 
@@ -631,8 +631,8 @@ GroundCollisionWarning.name                                        = create_guid
 GroundCollisionWarning.init_pos                                = {0, -0.3, 0}
 GroundCollisionWarning.init_rot                                = {0, 0, 0}
 GroundCollisionWarning.parent_element                = HUD_BASE.name                
-GroundCollisionWarning.element_params                = {"HUDBrightness","PULLUPQUE", "rollRad", "velVecHUDY","CURRENT_PHASE_STATIONARY","CURRENT_PHASE_PARKED","CURRENT_PHASE_TAXI",
-                                                                                                "CURRENT_PHASE_TGR","CURRENT_PHASE_ROT","CURRENT_PHASE_TD","CURRENT_PHASE_LR","CURRENT_PHASE_PAL", "PULLMORE","velVecHUDX"}
+GroundCollisionWarning.element_params                = {"HUDBrightness","PULLUPQUE", "rollRad", "FPVHUDY","CURRENT_PHASE_STATIONARY","CURRENT_PHASE_PARKED","CURRENT_PHASE_TAXI",
+                                                                                                "CURRENT_PHASE_TGR","CURRENT_PHASE_ROT","CURRENT_PHASE_TD","CURRENT_PHASE_LR","CURRENT_PHASE_PAL", "PULLMORE","FPVHUDX"}
 GroundCollisionWarning.controllers                        = { {"opacity_using_parameter" ,0}, {"parameter_in_range",1, -10000,0},{"rotate_using_parameter" ,2, 1.00},
                                                                                                 {"move_up_down_using_parameter",3, 0.322} ,{"parameter_compare_with_number",4, 0},{"parameter_compare_with_number",5, 0},
                                                                                                 {"parameter_compare_with_number",6, 0},{"parameter_compare_with_number",7, 0},{"parameter_compare_with_number",8, 0},

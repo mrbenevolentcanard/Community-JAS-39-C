@@ -5,7 +5,9 @@ local FBW = GetSelf()
 local sensor_data = get_base_data()
 
 FBW:listen_command(keys.S3_AimingMode)
-FBW:listen_command(keys.S4_AltitudeHold)
+-- TODO:
+-- Make the S4 keybind and bind that to AP, only available when in the air.
+FBW:listen_command(keys.stickS10)
 FBW:listen_command(deviceCommands.AP_ALT)
 FBW:listen_command(deviceCommands.AP_ATT)
 FBW:listen_command(deviceCommands.AP_MAN)
@@ -32,7 +34,7 @@ function SetCommand(command, value)
 		dispatch_action(OP_PHASES, 10060)
 	end
 
-	if command == deviceCommands.AP_ALT or command == keys.S4_AltitudeHold then
+	if command == deviceCommands.AP_ALT or (command == keys.stickS10 and value == 0) then
 		if get_param_handle("AutoPilotMode"):get() ~= 2 then
 			get_param_handle("AutoPilotMode"):set(2)
 		else

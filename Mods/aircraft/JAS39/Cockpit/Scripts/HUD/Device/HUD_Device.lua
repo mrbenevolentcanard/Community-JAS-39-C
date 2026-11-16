@@ -99,11 +99,11 @@ local baroAlt       = get_param_handle("baroAlt")
 local radarAlt      = get_param_handle("radarAlt")
 
 
-local velVecHUDY = get_param_handle("velVecHUDY")
-local velVecHUDX = get_param_handle("velVecHUDX")
+local FPVHUDY = get_param_handle("FPVHUDY")
+local FPVHUDX = get_param_handle("FPVHUDX")
 
-local VV_LimitedLower = get_param_handle("VV_LimitedLower")
-local VV_LimitedUpper = get_param_handle("VV_LimitedUpper")
+local FPVLowLim = get_param_handle("FPVLowLim") -- Rename to Flight Path Marker FPM
+local FPVUpLim = get_param_handle("FPVUpLim")
 
 local HUDDeclutt = get_param_handle("HUDDeclutt")
 
@@ -525,55 +525,82 @@ function update()
 
 
 	local VelVec_x = math.rad(baseData.getAngleOfSlide())
-	local VelVec_y = -baseData.getAngleOfAttack() -- -get_param_handle("FilteredAOA"):get()
+	local AoA = baseData.getAngleOfAttack()
+	local FPVY = -AoA -- -get_param_handle("FilteredAOA"):get()
 
 
+
+	get_param_handle("HUDSidesY"):set(math.max(math.min(math.rad(-1.5), FPVY), math.rad(-11.5)))
+
+	local function sidesXLim(sidesY)
+		local x = math.deg(sidesY)
+
+		return -.0000355943 * sidesY^4 - .00100252 * sidesY^3 - .00964649 * sidesY^2 - .0334584 * sidesY - 0.00127264
+	end
+
+	get_param_handle("HUDSidesX"):set(math.min(math.abs(VelVec_x), sidesXLim(get_param_handle("HUDSidesY"):get())) * Math.sign2(VelVec_x))
+
+	local FPVUpperLim = math.rad(1.5)
+	local FPVLowerLim = LANDING_MODE:get() == 1 and math.rad(-14.75) or math.rad(-11.5)
+
+	get_param_handle("FPVHUDY"):set(math.max(math.min(FPVUpperLim, FPVY), FPVLowerLim))
+	get_param_handle("FPVHUDX"):set(math.min(math.abs(VelVec_x), math.rad(7.2)) * Math.sign2(VelVec_x))
+	local FPSLimitedLower = FPVY <= FPVLowerLim
+	FPVLowLim:set(FPSLimitedLower and 1 or 0)
+	FPVUpLim:set(FPVY >= FPVUpperLim and 1 or 0)
+	get_param_handle("FPVLimited"):set((FPSLimitedLower or FPVY >= FPVUpperLim) and 1 or 0)
+
+	get_param_handle("HUDTextBarState"):set(not FPSLimitedLower and 1 or 0)
+
+	--[[
 	if get_param_handle("CURRENT_PHASE_STATIONARY"):get() == 1 or get_param_handle("CURRENT_PHASE_PARKED"):get() == 1 or get_param_handle("CURRENT_PHASE_TAXI"):get() == 1 or get_param_handle("CURRENT_PHASE_TGR"):get() == 1 or get_param_handle("CURRENT_PHASE_LR"):get() == 1 then
-		get_param_handle("HUDSidesY"):set((VelVec_y - .06) + ((get_param_handle("HUD_VELVEC_VER_LINE_POS"):get() * 14) * .001) - .014) -- ((get_param_handle("HUD_VELVEC_VER_LINE_POS"):get() * 14) * .001) - .084
+		get_param_handle("HUDSidesY"):set((VelVec_y - .06) + ((get_param_handle("velvecY"):get() * 14) * .001) - .014) -- ((get_param_handle("velvecY"):get() * 14) * .001) - .084
 		get_param_handle("HUDSidesX"):set(0)
 		if VelVec_y - .06 < -.225 then
-			velVecHUDY:set(-.225)
+			FPVHUDY:set(-.225)
 		else
-			velVecHUDY:set(VelVec_y - .06)
+			FPVHUDY:set(VelVec_y - .06)
 		end
-		velVecHUDX:set(0)
-		VV_LimitedLower:set(1)
+		FPVHUDX:set(0)
+		FPVLowLim:set(1)
 	elseif get_param_handle("CURRENT_PHASE_ROT"):get() == 1 then
 		if VelVec_y - .06 < -.225 then
 			get_param_handle("HUDSidesY"):set(-.225)
 		elseif VelVec_y > -.005 then
 			get_param_handle("HUDSidesY"):set(-.005)
 		else
-			get_param_handle("HUDSidesY"):set((VelVec_y - .06) + ((get_param_handle("HUD_VELVEC_VER_LINE_POS"):get() * 14) * .001) - .014)
+			get_param_handle("HUDSidesY"):set((VelVec_y - .06) + ((get_param_handle("velvecY"):get() * 14) * .001) - .014)
 		end
 		get_param_handle("HUDSidesX"):set(0)
 		if VelVec_y - .06 < -.225 then
-			velVecHUDY:set(-.225) -- 8aoa ska det vara.
+			FPVHUDY:set(-.225) -- 8aoa ska det vara.
 		else
-			velVecHUDY:set(VelVec_y - .06)
+			FPVHUDY:set(VelVec_y - .06)
 		end
-		velVecHUDX:set(0)
+		FPVHUDX:set(0)
 	else
 		if HUD_CUR_AOA:get() >= 14.5 then -- idk what I did here.
-			VV_LimitedLower:set(1)
-			velVecHUDY:set(math.rad(-14.5))
+			FPVLowLim:set(1)
+			FPVHUDY:set(math.rad(-14.5))
 			get_param_handle("HUDSidesY"):set(math.rad(-14.5))
 		elseif HUD_CUR_AOA:get() <= -4.5 then
-			VV_LimitedUpper:set(1)
-			velVecHUDY:set(math.rad(4.5))
+			FPVUpLim:set(1)
+			FPVHUDY:set(math.rad(4.5))
 		else
-			VV_LimitedLower:set(0)
-			VV_LimitedUpper:set(0)
-			velVecHUDY:set(VelVec_y)
+			FPVLowLim:set(0)
+			FPVUpLim:set(0)
+			FPVHUDY:set(VelVec_y)
 			get_param_handle("HUDSidesY"):set(VelVec_y)
 		end
 		if VelVec_x <= -.16 then
-			velVecHUDX:set(-.16)
+			FPVHUDX:set(-.16)
 		elseif VelVec_x >= .16 then
-			velVecHUDX:set(.16)
+			FPVHUDX:set(.16)
 		else
-			velVecHUDX:set(VelVec_x)
+			FPVHUDX:set(VelVec_x)
 		end
+
+		-- FPVHUDY:set(math.rad(-15))
 
 
 
@@ -631,39 +658,40 @@ function update()
 	end
 
 	-- if get_param_handle("weaponsMode"):get() == 3 and get_param_handle("RADAR_MODE"):get() == 3 then
-	-- velVecHUDY:set(-get_param_handle("GunPiperElev"):get())
-	-- velVecHUDX:set(get_param_handle("GunPiperAz"):get())
+	-- FPVHUDY:set(-get_param_handle("GunPiperElev"):get())
+	-- FPVHUDX:set(get_param_handle("GunPiperAz"):get())
 	-- end
 
 
-	-- get_param_handle("TEST_PITCHER"):set(math.cos(ROLL_HUD:get()) * (pitchRad:get() + velVecHUDY:get()))
+	-- get_param_handle("TEST_PITCHER"):set(math.cos(ROLL_HUD:get()) * (pitchRad:get() + FPVHUDY:get()))
 
-	-- get_param_handle("TEST_ROLLER"):set(math.sin(ROLL_HUD:get()) * (pitchRad:get() + velVecHUDY:get()))
+	-- get_param_handle("TEST_ROLLER"):set(math.sin(ROLL_HUD:get()) * (pitchRad:get() + FPVHUDY:get()))
 
-	if (get_param_handle("PULLUPQUE"):get() + (math.rad(20) * 1000)) - (velVecHUDY:get() * 10) < -130 then
+	if (get_param_handle("PULLUPQUE"):get() + (math.rad(20) * 1000)) - (FPVHUDY:get() * 10) < -130 then
 		get_param_handle("HUD_PULLUPQUE"):set(-130)
 	else
-		get_param_handle("HUD_PULLUPQUE"):set((get_param_handle("PULLUPQUE"):get() + (math.rad(20) * 1000)) - (velVecHUDY:get() * 10))
+		get_param_handle("HUD_PULLUPQUE"):set((get_param_handle("PULLUPQUE"):get() + (math.rad(20) * 1000)) - (FPVHUDY:get() * 10))
 	end
 
 
 	if get_param_handle("CURRENT_PHASE_CO"):get() == 1 then
-		get_param_handle("DSI_UP"):set(0)
-		if VV_LimitedLower:get() == 1 then
-			get_param_handle("DSI_STATE"):set(0)
+		get_param_handle("HUDTextBarUp"):set(0)
+		if FPVLowLim:get() == 1 then
+			get_param_handle("HUDTextBarState"):set(0)
 		else
-			get_param_handle("DSI_STATE"):set(1)
+			get_param_handle("HUDTextBarState"):set(1)
 		end
 	elseif get_param_handle("CURRENT_PHASE_PAL"):get() == 1 then
-		get_param_handle("DSI_STATE"):set(1)
+		get_param_handle("HUDTextBarState"):set(1)
 		if get_param_handle("HUDSidesY"):get() < -.1 then
-			get_param_handle("DSI_UP"):set(1)
+			get_param_handle("HUDTextBarUp"):set(1)
 		else
-			get_param_handle("DSI_UP"):set(0)
+			get_param_handle("HUDTextBarUp"):set(0)
 		end
 	else
-		get_param_handle("DSI_STATE"):set(0)
+		get_param_handle("HUDTextBarState"):set(0)
 	end
+	--]]
 
 
 
@@ -752,8 +780,8 @@ function update()
 
 
 	if get_param_handle("CURRENT_PHASE_STATIONARY"):get() == 1 or get_param_handle("CURRENT_PHASE_PARKED"):get() == 1 or get_param_handle("CURRENT_PHASE_TAXI"):get() == 1 then
-		get_param_handle("HUD_VELVEC_VER_LINE_POS"):set(0)
-		get_param_handle("HUD_VELVEC_VER_LINE_BLINK"):set(0)
+		get_param_handle("velvecY"):set(0)
+		get_param_handle("velvecBlink"):set(0)
 	elseif get_param_handle("CURRENT_PHASE_TGR"):get() == 1 or get_param_handle("CURRENT_PHASE_ROT"):get() == 1 or get_param_handle("CURRENT_PHASE_TD"):get() == 1 or get_param_handle("CURRENT_PHASE_LR"):get() == 1 then
 		local TakeOffSpeed     = 0
 		local TakeOffOverspeed = 0
@@ -780,39 +808,39 @@ function update()
 		end
 
 		if get_param_handle("CURRENT_PHASE_TGR"):get() == 1 then
-			get_param_handle("HUD_VELVEC_VER_LINE_BLINK"):set(OverSpeedBlink)
+			get_param_handle("velvecBlink"):set(OverSpeedBlink)
 		else
-			get_param_handle("HUD_VELVEC_VER_LINE_BLINK"):set(0)
+			get_param_handle("velvecBlink"):set(0)
 		end
-		get_param_handle("HUD_VELVEC_VER_LINE_POS"):set(TakeOffSpeed)
+		get_param_handle("velvecY"):set(TakeOffSpeed)
 	elseif get_param_handle("CURRENT_PHASE_CO"):get() == 1 then
-		get_param_handle("HUD_VELVEC_VER_LINE_BLINK"):set(0)
+		get_param_handle("velvecBlink"):set(0)
 		if get_param_handle("masterMode"):get() ~= 0 then
-			get_param_handle("HUD_VELVEC_VER_LINE_POS"):set(2.6)
+			get_param_handle("velvecY"):set(2.6)
 		else
-			get_param_handle("HUD_VELVEC_VER_LINE_POS"):set(.72)
+			get_param_handle("velvecY"):set(.72)
 		end
 	elseif get_param_handle("CURRENT_PHASE_PAL"):get() == 1 then
 		local Landing_Speed          = 128
 		local Current_Approach_Speed = Landing_Speed - SNSRCAS:get()
 
 		if Current_Approach_Speed == 0 then
-			get_param_handle("HUD_VELVEC_VER_LINE_POS"):set(.72)
+			get_param_handle("velvecY"):set(.72)
 		else
 			if .72 - Current_Approach_Speed * .05 < .32 then -- UnderSpeedBlink
-				get_param_handle("HUD_VELVEC_VER_LINE_POS"):set(.32)
+				get_param_handle("velvecY"):set(.32)
 				if UnderSpeedBlink < 1 then
 					UnderSpeedBlink = UnderSpeedBlink + updateTimeStep
 				else
 					UnderSpeedBlink = 0
 				end
-				get_param_handle("HUD_VELVEC_VER_LINE_BLINK"):set(UnderSpeedBlink)
+				get_param_handle("velvecBlink"):set(UnderSpeedBlink)
 			elseif .72 - Current_Approach_Speed * .05 > 1.13 then
-				get_param_handle("HUD_VELVEC_VER_LINE_POS"):set(1.13)
-				get_param_handle("HUD_VELVEC_VER_LINE_BLINK"):set(0)
+				get_param_handle("velvecY"):set(1.13)
+				get_param_handle("velvecBlink"):set(0)
 			else
-				get_param_handle("HUD_VELVEC_VER_LINE_POS"):set(.72 - Current_Approach_Speed * .05)
-				get_param_handle("HUD_VELVEC_VER_LINE_BLINK"):set(0)
+				get_param_handle("velvecY"):set(.72 - Current_Approach_Speed * .05)
+				get_param_handle("velvecBlink"):set(0)
 			end
 		end
 	end
