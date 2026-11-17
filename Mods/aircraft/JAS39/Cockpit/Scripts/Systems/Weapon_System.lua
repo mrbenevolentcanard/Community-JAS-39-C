@@ -16,7 +16,7 @@ WS:listen_command(keys.trigger)
 WS:listen_command(deviceCommands.triggerSafe)
 WS:listen_command(keys.triggerSafe)
 WS:listen_command(keys.triggerSafeHold)
-WS:listen_command(keys.stickS3AimingMode)
+WS:listen_command(keys.stickS3)
 WS:listen_command(keys.stickS5Up)
 WS:listen_command(keys.stickS5Down)
 WS:listen_command(keys.stickS5Left)
@@ -36,6 +36,7 @@ local triggerSafe = get_param_handle("triggerSafe")
 
 local primaryMode = get_param_handle("primaryMode") -- Primary modes: 1 = A/A, 2 = A/S, 3 = RCE
 local weaponsMode = get_param_handle("weaponsMode") -- holds a wTypes value: AA = 1, dogfight = 2, gun = 3, AS = 4 (0 = NAV)
+local LANDING_MODE = get_param_handle("LANDING_MODE")
 
 
 
@@ -68,7 +69,7 @@ local MASSCommands = {
 }
 
 local MASSState
-local triggerSafeState
+local triggerSafeState = 0
 
 local trigger = false
 local gunFiring = false
@@ -85,6 +86,8 @@ local function updateAmmoCount()
 	return count
 end
 
+-- TODO: 
+-- local variable to store for the weight of each pylon, to then calculate the weight of the aircraft for the roll fix.
 --- Updates table `pylonInfo` with the data from each pylon, such as type and weapon count.
 local function updatePylonInfo()
 	for i, name in ipairs(pylonOrder) do
@@ -204,13 +207,17 @@ local function selectFrom(mode, fromIndex, includeGun)
 end
 
 --- Selects the correct mode when pressing a weapon mode select button.
---- @param newMaster integer The new primaryMode corresponding to the selected weapon mode.
+--- @param newPrimary integer The new primaryMode corresponding to the selected weapon mode.
 --- @param newWeapons integer The new weaponsMode corresponing to the selected weapon mode.
-local function selectMode(newMaster, newWeapons)
-	local same = primaryMode:get() == newMaster and weaponsMode:get() == newWeapons -- Pressing the button of the mode we're already in cycles weapons, otherwise jump to the highest priority weapon.
+local function selectMode(newPrimary, newWeapons)
+	local same = primaryMode:get() == newPrimary and weaponsMode:get() == newWeapons -- Pressing the button of the mode we're already in cycles weapons, otherwise jump to the highest priority weapon.
 
-	primaryMode:set(newMaster)
+	primaryMode:set(newPrimary)
 	weaponsMode:set(newWeapons)
+
+	if newWeapons ~= wTypes.none then
+		LANDING_MODE:set(0)
+	end
 
 	updatePylonInfo()
 	selectFrom(newWeapons, same and selectedStation or -1, true)
@@ -343,12 +350,28 @@ function SetCommand(command, value)
 
 
 
+	if command == keys.stickS3 and value == 0 then
+		if weaponsMode:get() == -1 and triggerSafeState == 0 then
+			LANDING_MODE:set(LANDING_MODE:get() == 0 and 1 or 0)
+		elseif weaponsMode:get() ~= -1 and triggerSafeState == 0 then
+			selectMode(primaryMode:get(), wTypes.none)
+		elseif weaponsMode:get() ~= -1 and triggerSafeState == 1 then
+			get_param_handle("aimingMode"):set(1)
+		end
+	end
+
+
 	if command == 99990 then selectPylon(value) end -- A command 99990 comes from Displays.lua whenever a LD softkey button that selects a specific weapon.
 
 
 	local mode = modeCommands[command]
 
 	if mode and value == 1 then
+		-- TODO:
+		-- Make the selection happen on value == 0 (just check so everything with s5Down works)
+		-- Only IR and Gun selectable with S5Left, no BVR. First select an IR/no wpn, then on another push go to gun
+		-- Only BVR missiles selectable with S5Up, no gun or IR.
+		-- Gun and IR should start aiming mode if a weapon is available.
 		if command ~= keys.stickS5Down then
 			ASModeClock = false -- Any other mode button cancels a pending A/S switch
 			ASModeClockTime = 0
@@ -359,9 +382,9 @@ function SetCommand(command, value)
 		else
 			selectMode(mode.primaryMode or 1, mode.weaponsMode)
 
-			if mode.weaponsMode == wTypes.dogfight then
-				get_param_handle("AimingMode"):set(0)
-			end
+			-- if mode.weaponsMode == wTypes.dogfight then
+				-- get_param_handle("AimingMode"):set(0)
+			-- end
 		end
 	elseif mode and value == 0 and command == keys.stickS5Down and ASModeClock == true then
 		ASModeClock = false

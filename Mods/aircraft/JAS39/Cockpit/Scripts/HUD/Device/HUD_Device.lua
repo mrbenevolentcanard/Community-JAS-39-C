@@ -30,6 +30,8 @@ local M_TO_FT = 3.28083989501312335958
 local M_PER_S_TO_FT_PER_MIN = M_TO_FT * 60
 
 
+local HUDRightSideX = get_param_handle("HUDRightSideX")
+
 local HUDAltReadoutAvail     = get_param_handle("HUDAltReadoutAvail")
 local HUDAltReadout          = get_param_handle("HUDAltReadout")
 local HUDAltReadoutThousands = get_param_handle("HUDAltReadoutThousands")
@@ -43,6 +45,8 @@ local altitudeDeclutt        = get_param_handle("altitudeDeclutt")
 
 local CURRENT_PHASE = get_param_handle("CURRENT_PHASE")
 local LANDING_MODE  = get_param_handle("LANDING_MODE")
+
+local glideSlopeY = get_param_handle("glideSlopeY")
 
 
 
@@ -99,11 +103,11 @@ local baroAlt       = get_param_handle("baroAlt")
 local radarAlt      = get_param_handle("radarAlt")
 
 
-local FPVHUDY = get_param_handle("FPVHUDY")
-local FPVHUDX = get_param_handle("FPVHUDX")
+local FPMHUDY = get_param_handle("FPMHUDY")
+local FPMHUDX = get_param_handle("FPMHUDX")
 
-local FPVLowLim = get_param_handle("FPVLowLim") -- Rename to Flight Path Marker FPM
-local FPVUpLim = get_param_handle("FPVUpLim")
+local FPMLowLim = get_param_handle("FPMLowLim") -- Rename to Flight Path Marker FPM
+local FPMUpLim = get_param_handle("FPMUpLim")
 
 local HUDDeclutt = get_param_handle("HUDDeclutt")
 
@@ -472,14 +476,55 @@ function SetCommand(command, value)
 end
 
 function update()
-	if get_param_handle("weaponsMode"):get() ~= -1 or HUDDeclutt:get() == 1 then
+	if get_param_handle("aimingMode"):get() ~= 0 or HUDDeclutt:get() == 1 then
 		altitudeDeclutt:set(1)
-		linearAnimate(0, -.0875, get_param_handle("HUDRightSideX"), .1)
+		linearAnimate(0, -.0875, HUDRightSideX, .1)
 	else
 		altitudeDeclutt:set(0)
+		linearAnimate(-.0875, 0, HUDRightSideX, .1)
 	end
 
 	updateAltitudeScale(primaryAltVal:get(), altitudeDeclutt:get() == 1)
+
+
+
+
+	local VelVec_x = math.rad(baseData.getAngleOfSlide())
+	local AoA = baseData.getAngleOfAttack()
+	local FPMY = -AoA -- -get_param_handle("FilteredAOA"):get()
+
+
+
+	get_param_handle("HUDSidesY"):set(math.max(math.min(math.rad(-1.5), FPMY), math.rad(-11.5)))
+
+	local function sidesXLim(sidesY)
+		local x = math.deg(sidesY)
+
+		return -.0000355943 * x^4 - .00100252 * x^3 - .00964649 * x^2 - .0334584 * x - 0.00127264
+	end
+
+	get_param_handle("HUDSidesX"):set(math.min(math.abs(VelVec_x), sidesXLim(get_param_handle("HUDSidesY"):get())) * Math.sign2(VelVec_x))
+
+	local FPMUpperLim = math.rad(1.5)
+	local FPMLowerLim = LANDING_MODE:get() == 1 and math.rad(-14.75) or math.rad(-11.5)
+
+	get_param_handle("FPMHUDY"):set(math.max(math.min(FPMUpperLim, FPMY), FPMLowerLim))
+	get_param_handle("FPMHUDX"):set(math.min(math.abs(VelVec_x), math.rad(7.2)) * Math.sign2(VelVec_x))
+	local FPSLimitedLower = FPMY <= FPMLowerLim
+	FPMLowLim:set(FPSLimitedLower and 1 or 0)
+	FPMUpLim:set(FPMY >= FPMUpperLim and 1 or 0)
+	get_param_handle("FPMLimited"):set((FPSLimitedLower or FPMY >= FPMUpperLim) and 1 or 0)
+
+	get_param_handle("HUDTextBarState"):set(not FPSLimitedLower and 1 or 0)
+
+
+
+	if LANDING_MODE:get() == 1 then
+		glideSlopeY:set(math.max(math.rad(-2.86), glideSlopeY:get() - (updateTimeStep * math.rad(2.86) / 5)))
+	else
+		glideSlopeY:set(0)
+	end
+
 
 
 
@@ -501,15 +546,7 @@ function update()
 
 
 
-	if get_param_handle("landingMode"):get() == 1 then
-		if get_param_handle("GLIDE_SLOPE_MOVE"):get() <= math.rad(-2.86) then
-			get_param_handle("GLIDE_SLOPE_MOVE"):set(math.rad(-2.86))
-		else
-			get_param_handle("GLIDE_SLOPE_MOVE"):set(get_param_handle("GLIDE_SLOPE_MOVE"):get() - (updateTimeStep * math.rad(2.86) / 5))
-		end
-	else
-		get_param_handle("GLIDE_SLOPE_MOVE"):set(0)
-	end
+	
 
 	local Hud_Ralt = baseData.getRadarAltitude() * 3.2808399
 
@@ -524,45 +561,19 @@ function update()
 	pitchRad:set(baseData.getPitch())
 
 
-	local VelVec_x = math.rad(baseData.getAngleOfSlide())
-	local AoA = baseData.getAngleOfAttack()
-	local FPVY = -AoA -- -get_param_handle("FilteredAOA"):get()
-
-
-
-	get_param_handle("HUDSidesY"):set(math.max(math.min(math.rad(-1.5), FPVY), math.rad(-11.5)))
-
-	local function sidesXLim(sidesY)
-		local x = math.deg(sidesY)
-
-		return -.0000355943 * sidesY^4 - .00100252 * sidesY^3 - .00964649 * sidesY^2 - .0334584 * sidesY - 0.00127264
-	end
-
-	get_param_handle("HUDSidesX"):set(math.min(math.abs(VelVec_x), sidesXLim(get_param_handle("HUDSidesY"):get())) * Math.sign2(VelVec_x))
-
-	local FPVUpperLim = math.rad(1.5)
-	local FPVLowerLim = LANDING_MODE:get() == 1 and math.rad(-14.75) or math.rad(-11.5)
-
-	get_param_handle("FPVHUDY"):set(math.max(math.min(FPVUpperLim, FPVY), FPVLowerLim))
-	get_param_handle("FPVHUDX"):set(math.min(math.abs(VelVec_x), math.rad(7.2)) * Math.sign2(VelVec_x))
-	local FPSLimitedLower = FPVY <= FPVLowerLim
-	FPVLowLim:set(FPSLimitedLower and 1 or 0)
-	FPVUpLim:set(FPVY >= FPVUpperLim and 1 or 0)
-	get_param_handle("FPVLimited"):set((FPSLimitedLower or FPVY >= FPVUpperLim) and 1 or 0)
-
-	get_param_handle("HUDTextBarState"):set(not FPSLimitedLower and 1 or 0)
+	
 
 	--[[
 	if get_param_handle("CURRENT_PHASE_STATIONARY"):get() == 1 or get_param_handle("CURRENT_PHASE_PARKED"):get() == 1 or get_param_handle("CURRENT_PHASE_TAXI"):get() == 1 or get_param_handle("CURRENT_PHASE_TGR"):get() == 1 or get_param_handle("CURRENT_PHASE_LR"):get() == 1 then
 		get_param_handle("HUDSidesY"):set((VelVec_y - .06) + ((get_param_handle("velvecY"):get() * 14) * .001) - .014) -- ((get_param_handle("velvecY"):get() * 14) * .001) - .084
 		get_param_handle("HUDSidesX"):set(0)
 		if VelVec_y - .06 < -.225 then
-			FPVHUDY:set(-.225)
+			FPMHUDY:set(-.225)
 		else
-			FPVHUDY:set(VelVec_y - .06)
+			FPMHUDY:set(VelVec_y - .06)
 		end
-		FPVHUDX:set(0)
-		FPVLowLim:set(1)
+		FPMHUDX:set(0)
+		FPMLowLim:set(1)
 	elseif get_param_handle("CURRENT_PHASE_ROT"):get() == 1 then
 		if VelVec_y - .06 < -.225 then
 			get_param_handle("HUDSidesY"):set(-.225)
@@ -573,34 +584,34 @@ function update()
 		end
 		get_param_handle("HUDSidesX"):set(0)
 		if VelVec_y - .06 < -.225 then
-			FPVHUDY:set(-.225) -- 8aoa ska det vara.
+			FPMHUDY:set(-.225) -- 8aoa ska det vara.
 		else
-			FPVHUDY:set(VelVec_y - .06)
+			FPMHUDY:set(VelVec_y - .06)
 		end
-		FPVHUDX:set(0)
+		FPMHUDX:set(0)
 	else
 		if HUD_CUR_AOA:get() >= 14.5 then -- idk what I did here.
-			FPVLowLim:set(1)
-			FPVHUDY:set(math.rad(-14.5))
+			FPMLowLim:set(1)
+			FPMHUDY:set(math.rad(-14.5))
 			get_param_handle("HUDSidesY"):set(math.rad(-14.5))
 		elseif HUD_CUR_AOA:get() <= -4.5 then
-			FPVUpLim:set(1)
-			FPVHUDY:set(math.rad(4.5))
+			FPMUpLim:set(1)
+			FPMHUDY:set(math.rad(4.5))
 		else
-			FPVLowLim:set(0)
-			FPVUpLim:set(0)
-			FPVHUDY:set(VelVec_y)
+			FPMLowLim:set(0)
+			FPMUpLim:set(0)
+			FPMHUDY:set(VelVec_y)
 			get_param_handle("HUDSidesY"):set(VelVec_y)
 		end
 		if VelVec_x <= -.16 then
-			FPVHUDX:set(-.16)
+			FPMHUDX:set(-.16)
 		elseif VelVec_x >= .16 then
-			FPVHUDX:set(.16)
+			FPMHUDX:set(.16)
 		else
-			FPVHUDX:set(VelVec_x)
+			FPMHUDX:set(VelVec_x)
 		end
 
-		-- FPVHUDY:set(math.rad(-15))
+		-- FPMHUDY:set(math.rad(-15))
 
 
 
@@ -658,25 +669,25 @@ function update()
 	end
 
 	-- if get_param_handle("weaponsMode"):get() == 3 and get_param_handle("RADAR_MODE"):get() == 3 then
-	-- FPVHUDY:set(-get_param_handle("GunPiperElev"):get())
-	-- FPVHUDX:set(get_param_handle("GunPiperAz"):get())
+	-- FPMHUDY:set(-get_param_handle("GunPiperElev"):get())
+	-- FPMHUDX:set(get_param_handle("GunPiperAz"):get())
 	-- end
 
 
-	-- get_param_handle("TEST_PITCHER"):set(math.cos(ROLL_HUD:get()) * (pitchRad:get() + FPVHUDY:get()))
+	-- get_param_handle("TEST_PITCHER"):set(math.cos(ROLL_HUD:get()) * (pitchRad:get() + FPMHUDY:get()))
 
-	-- get_param_handle("TEST_ROLLER"):set(math.sin(ROLL_HUD:get()) * (pitchRad:get() + FPVHUDY:get()))
+	-- get_param_handle("TEST_ROLLER"):set(math.sin(ROLL_HUD:get()) * (pitchRad:get() + FPMHUDY:get()))
 
-	if (get_param_handle("PULLUPQUE"):get() + (math.rad(20) * 1000)) - (FPVHUDY:get() * 10) < -130 then
+	if (get_param_handle("PULLUPQUE"):get() + (math.rad(20) * 1000)) - (FPMHUDY:get() * 10) < -130 then
 		get_param_handle("HUD_PULLUPQUE"):set(-130)
 	else
-		get_param_handle("HUD_PULLUPQUE"):set((get_param_handle("PULLUPQUE"):get() + (math.rad(20) * 1000)) - (FPVHUDY:get() * 10))
+		get_param_handle("HUD_PULLUPQUE"):set((get_param_handle("PULLUPQUE"):get() + (math.rad(20) * 1000)) - (FPMHUDY:get() * 10))
 	end
 
 
 	if get_param_handle("CURRENT_PHASE_CO"):get() == 1 then
 		get_param_handle("HUDTextBarUp"):set(0)
-		if FPVLowLim:get() == 1 then
+		if FPMLowLim:get() == 1 then
 			get_param_handle("HUDTextBarState"):set(0)
 		else
 			get_param_handle("HUDTextBarState"):set(1)

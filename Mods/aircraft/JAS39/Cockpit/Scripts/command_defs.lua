@@ -632,7 +632,7 @@ keys = {
 	RDSK_11            = __custom_counter(),
 	RDSK_12            = __custom_counter(),
 	RDSK_13            = __custom_counter(),
-	RDSK14            = __custom_counter(),
+	RDSK14             = __custom_counter(),
 	RDSK_15            = __custom_counter(),
 	RDSK_16            = __custom_counter(),
 	RDSK_17            = __custom_counter(),
@@ -659,14 +659,15 @@ keys = {
 	S10SpanScaleDown = __custom_counter(),
 
 	-- Stick:
-	-- stickS3AimingMode = __custom_counter(),
 
+	stickS3 = __custom_counter(),
+	stickS4 = __custom_counter(),
 	stickS5Up = __custom_counter(),
 	stickS5Down = __custom_counter(),
 	stickS5Left = __custom_counter(),
 	stickS5Right = __custom_counter(),
+	stickS10 = __custom_counter()
 
-	stickS10 = __custom_counter(),
 
 	-------------------------------------------------------
 	-- Ejection Seat
@@ -981,7 +982,7 @@ deviceCommands =
 	RDSK_11                = __counter(),
 	RDSK_12                = __counter(),
 	RDSK_13                = __counter(),
-	RDSK14                = __counter(),
+	RDSK14                 = __counter(),
 	RDSK_15                = __counter(),
 	RDSK_16                = __counter(),
 	RDSK_17                = __counter(),
@@ -1043,7 +1044,7 @@ efm_commands =
 	CHOCKS_LADDER_REMOVE = 3897,
 	GROUND_PWR_CONNECT = 3898,
 	GROUND_PWR_DISCONNECT = 3899,
-	
+
 	PEACE_WAR_switch = 3900,
 
 	MAIN_PWR_switch = 3901,
@@ -1069,9 +1070,9 @@ efm_commands =
 	BRAKE_COMBO_axis = 3919,
 
 	AUTOPILOT_ALT = 3920,
-	AUTOPILOT_ATT = 3921, 
-	AUTOPILOT_MAN = 3922, 
-	AUTOPILOT_RESET = 3923, 
+	AUTOPILOT_ATT = 3921,
+	AUTOPILOT_MAN = 3922,
+	AUTOPILOT_RESET = 3923,
 	AUTOPILOT_ALT_S3 = 3924,
-	FCS_AIMINGMODE = 3925,
+	FCS_AIMINGMODE = 3925
 }

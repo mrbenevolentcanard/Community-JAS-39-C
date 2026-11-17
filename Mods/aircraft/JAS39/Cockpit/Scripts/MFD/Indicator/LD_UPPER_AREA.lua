@@ -259,7 +259,7 @@ local adi_Attitude			= create_mfd_VELVEC(ADI_VEELOCITYVECTOR, 20, 55, 354, 285,1
 adi_Attitude.name			= create_guid_string()
 adi_Attitude.init_pos		= {0, 0.270}
 adi_Attitude.parent_element	= GEN_PAGE.name
-adi_Attitude.element_params 	= {"FPVHUDY","FPVHUDX"}
+adi_Attitude.element_params 	= {"FPMHUDY","FPMHUDX"}
 adi_Attitude.controllers    	= { {"move_up_down_using_parameter",0, 0.036}, {"move_left_right_using_parameter",1, 0.036}}
 AddElement(adi_Attitude)
 	
